@@ -6,5 +6,5 @@
         kernel,stdlib,crypto,inets,sasl,cowboy,  
         compiler,syntax_tools  
     ]},  
-    {mod, { monterl_carlo_app, []}}
+    {mod, { monterl_carlo, []}}
 ]}. 
