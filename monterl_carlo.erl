@@ -11,7 +11,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1,start_link/6, start/2,stop/1,graph/2]).
+-export([start_link/1,start_link/6, start/2,stop/1,graph/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -68,8 +68,8 @@ start_link(Symbol,Px,Precision, AnnualVol, AnnualExpRet,Interval) when is_list(S
 start(Symbol,UpdateFun) when is_list(Symbol) ->
     gen_server:cast(list_to_atom(Symbol),{start,UpdateFun}).
 
-graph(Symbol,Points) when is_list(Symbol) ->
-    gen_server:call(list_to_atom(Symbol), {graph,Points}).
+graph(Symbol,Points,Type) when is_list(Symbol) ->
+    gen_server:call(list_to_atom(Symbol), {graph,Type,Points}).
 
 stop(Symbol) when is_list(Symbol) ->
     gen_server:cast(list_to_atom(Symbol),stop).
@@ -77,12 +77,24 @@ stop(Symbol) when is_list(Symbol) ->
 init([State]) ->
     {ok, State}.
 
-handle_call({graph,Points}, _From, State) ->
+handle_call({graph,Type,Points}, _From, State) ->
     P = lists:seq(1,Points),
     {Result,NewState} = lists:foldl(fun(X,Acc) ->
 					    {L,S} = Acc,
 					    NS = calculate(S),
-					    {[{X,NS#state.bid}|L],NS}
+					    case Type of
+						ask -> {[{X,NS#state.ask}|L],NS};
+						both -> {[{X,{NS#state.bid,NS#state.ask}}|L],NS};
+						statistics -> {[{X,{NS#state.bid,
+								    NS#state.ask,
+								    NS#state.max,
+								    NS#state.min,
+								    NS#state.average_bp_change,
+								    NS#state.last_bp_change,
+								    NS#state.max_bp_change,
+								    NS#state.min_bp_change
+								   }}|L], NS};										 _ -> {[{X,NS#state.bid}|L],NS}
+					    end
 				    end,{[],State},P),
     {reply, Result, NewState};
 
