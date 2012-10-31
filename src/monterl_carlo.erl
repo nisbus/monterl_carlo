@@ -149,8 +149,8 @@ multiplier(P) ->
 calculate(#state{return_mean=RM,daily_vol = DV, 
 			    bid=PX, max=Mx, min=Mn, average_bp_change=AV,
 			    loop_count=C,max_bp_change=MaxBpChange,
-			    min_bp_change=MinBpChange,precision=Precision			  } = State) ->
-        R = non_zero_rand(),
+			    min_bp_change=MinBpChange,precision=Precision} = State) ->
+    R = non_zero_rand(),
     RandVol = maths:inv_normal_dist(R),
     LogRet = (RM+DV)*RandVol,
     BidPrice = PX*(math:exp(LogRet)),
