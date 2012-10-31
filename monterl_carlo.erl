@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 31 Oct 2012 by nisbus <nisbus@gmail.com>
 %%%-------------------------------------------------------------------
--module(monte_carlo).
+-module(monterl_carlo).
 
 -behaviour(gen_server).
 
