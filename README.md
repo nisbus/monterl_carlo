@@ -11,7 +11,7 @@ You can start it and it will execute a function on every tick or you can have it
   
 ###initialize    
   
-```erl
+```erlang
 monterl_carlo:start_link("MSFT",28.61,5,0.1,0.2,1000).
 ```
   
@@ -25,7 +25,7 @@ where the parameters are:
   
 ###Start pumping out data:  
   
-```erl
+```erlang
 monterl_carlo:start("MSFT",fun(X) -> io:format("~p~n",[X]) end).
 ```  
   
@@ -33,14 +33,14 @@ This will start pumping out the state of the simulation at the interval you spec
   
 You can stop it by calling:  
   
-```erl
+```erlang
 monterl_carlo:stop("MSFT").
 ```  
   
 
 ###Generate graph data  
   
-```erl
+```erlang
 monterl_carlo:graph("MSFT",50, bid).
 ```  
   
