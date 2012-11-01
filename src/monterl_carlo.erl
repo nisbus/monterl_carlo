@@ -50,11 +50,17 @@
 start_link(Symbol) ->
     start_link(Symbol,25.5,5,0.1,0.1,1000).
 
+start_link(Symbol,Px,Precision, AnnualVol, AnnualExpRet,Interval) when is_binary(Symbol) ->
+    start_link(list_to_atom(binary_to_list(Symbol)),Px,Precision, AnnualVol, AnnualExpRet,Interval);
+
 start_link(Symbol,Px,Precision, AnnualVol, AnnualExpRet,Interval) when is_list(Symbol) ->
+    start_link(list_to_atom(Symbol),Px,Precision, AnnualVol, AnnualExpRet,Interval);
+
+start_link(Symbol,Px,Precision, AnnualVol, AnnualExpRet,Interval) when is_atom(Symbol) ->
     DailyRet = (AnnualExpRet/100)/252,
     DailyVol = (AnnualVol/100)/math:sqrt(252),
     RetM = DailyRet-0.5*math:pow(DailyVol,2),
-    gen_server:start_link({local, list_to_atom(Symbol)}, ?MODULE, [#state{
+    gen_server:start_link({local, Symbol}, ?MODULE, [#state{
 								      symbol=Symbol,
 								      annual_vol=AnnualVol,
 								      annual_exp_return=AnnualExpRet,
@@ -65,14 +71,29 @@ start_link(Symbol,Px,Precision, AnnualVol, AnnualExpRet,Interval) when is_list(S
 								      daily_return=DailyRet,
 								      daily_vol=DailyVol
 								     }], []).
+
+start(Symbol,UpdateFun) when is_atom(Symbol) ->
+    gen_server:cast(Symbol,{start,UpdateFun});
+start(Symbol,UpdateFun) when is_binary(Symbol) ->
+    start(list_to_atom(binary_to_list(Symbol)),UpdateFun);
 start(Symbol,UpdateFun) when is_list(Symbol) ->
-    gen_server:cast(list_to_atom(Symbol),{start,UpdateFun}).
+    start(list_to_atom(Symbol),UpdateFun).
 
+graph(Symbol,Points,Type) when is_atom(Symbol) ->
+    gen_server:call(Symbol, {graph,Type,Points});
 graph(Symbol,Points,Type) when is_list(Symbol) ->
-    gen_server:call(list_to_atom(Symbol), {graph,Type,Points}).
+    graph(list_to_atom(Symbol),Points,Type);
+graph(Symbol,Points,Type) when is_binary(Symbol) ->
+    graph(list_to_atom(binary_to_list(Symbol)),Points,Type).
 
+
+
+stop(Symbol) when is_atom(Symbol) ->
+    gen_server:cast(Symbol,stop);
 stop(Symbol) when is_list(Symbol) ->
-    gen_server:cast(list_to_atom(Symbol),stop).
+    stop(list_to_atom(Symbol));
+stop(Symbol) when is_binary(Symbol) ->
+    stop(list_to_atom(binary_to_list(Symbol))).
 
 init([State]) ->
     {ok, State}.
