@@ -79,12 +79,12 @@ start(Symbol,UpdateFun) when is_binary(Symbol) ->
 start(Symbol,UpdateFun) when is_list(Symbol) ->
     start(list_to_atom(Symbol),UpdateFun).
 
-graph(Symbol,Points,Type) when is_atom(Symbol) ->
+graph(Symbol,Points,Type) when is_atom(Symbol) and is_atom(Type) ->
     gen_server:call(Symbol, {graph,Type,Points});
-graph(Symbol,Points,Type) when is_list(Symbol) ->
-    graph(list_to_atom(Symbol),Points,Type);
-graph(Symbol,Points,Type) when is_binary(Symbol) ->
-    graph(list_to_atom(binary_to_list(Symbol)),Points,Type).
+graph(Symbol,Points,Type) when is_list(Symbol) and is_list(Type) ->
+    graph(list_to_atom(Symbol),Points,list_to_atom(Type));
+graph(Symbol,Points,Type) when is_binary(Symbol) and is_binary(Type) ->
+    graph(list_to_atom(binary_to_list(Symbol)),Points,list_to_atom(binary_to_list(Type))).
 
 
 
@@ -98,6 +98,7 @@ stop(Symbol) when is_binary(Symbol) ->
 init([State]) ->
     {ok, State}.
 
+    
 handle_call({graph,Type,Points}, _From, State) ->
     P = lists:seq(1,Points),
     {Result,NewState} = lists:foldl(fun(X,Acc) ->
@@ -124,7 +125,7 @@ handle_call({graph,Type,Points}, _From, State) ->
 						_ -> {[[{<<"counter">>,X},{<<"bid">>,NS#state.bid}]|L],NS}
 					    end
 				    end,{[],State},P),
-    {reply, Result, NewState};
+    {reply, [{<<"graph">>,Result}], NewState};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -153,7 +154,7 @@ handle_info(interval,#state{updatefun=Update} = State) ->
 	     {<<"max_bp_change">>,NS#state.max_bp_change},
 	     {<<"min_bp_change">>,NS#state.min_bp_change},
 	     {<<"bp_diff">>,NS#state.bp_diff}],
-    Update(Reply),
+    Update([{<<"point">>,Reply}]),
     {noreply, NS}.
 
 
