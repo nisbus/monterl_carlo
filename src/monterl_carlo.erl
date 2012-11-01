@@ -11,7 +11,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1,start_link/6, start/2,stop/1,graph/3]).
+-export([start_link/1,start_link/6, subscribe/2,unsubscribe/1,stop/1,graph/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -72,12 +72,12 @@ start_link(Symbol,Px,Precision, AnnualVol, AnnualExpRet,Interval) when is_atom(S
 								      daily_vol=DailyVol
 								     }], []).
 
-start(Symbol,UpdateFun) when is_atom(Symbol) ->
-    gen_server:cast(Symbol,{start,UpdateFun});
-start(Symbol,UpdateFun) when is_binary(Symbol) ->
-    start(list_to_atom(binary_to_list(Symbol)),UpdateFun);
-start(Symbol,UpdateFun) when is_list(Symbol) ->
-    start(list_to_atom(Symbol),UpdateFun).
+subscribe(Symbol,UpdateFun) when is_atom(Symbol) ->
+    gen_server:cast(Symbol,{subscribe,UpdateFun});
+subscribe(Symbol,UpdateFun) when is_binary(Symbol) ->
+    subscribe(list_to_atom(binary_to_list(Symbol)),UpdateFun);
+subscribe(Symbol,UpdateFun) when is_list(Symbol) ->
+    subscribe(list_to_atom(Symbol),UpdateFun).
 
 graph(Symbol,Points,Type) when is_atom(Symbol) and is_atom(Type) ->
     gen_server:call(Symbol, {graph,Type,Points});
@@ -87,6 +87,12 @@ graph(Symbol,Points,Type) when is_binary(Symbol) and is_binary(Type) ->
     graph(list_to_atom(binary_to_list(Symbol)),Points,list_to_atom(binary_to_list(Type))).
 
 
+unsubscribe(Symbol) when is_atom(Symbol) ->
+    gen_server:cast(Symbol,unsubscribe);
+unsubscribe(Symbol) when is_list(Symbol) ->
+    unsubscribe(list_to_atom(Symbol));
+unsubscribe(Symbol) when is_binary(Symbol) ->
+    unsubscribe(list_to_atom(binary_to_list(Symbol))).
 
 stop(Symbol) when is_atom(Symbol) ->
     gen_server:cast(Symbol,stop);
@@ -105,24 +111,39 @@ handle_call({graph,Type,Points}, _From, State) ->
 					    {L,S} = Acc,
 					    NS = calculate(S),
 					    case Type of
-						ask -> {[[{<<"counter">>,X}],
-							 [{<<"ask">>,NS#state.ask}]|L],NS};
+						ask -> {[
+							 [{<<"point">>,[
+							   [{<<"counter">>,X}],
+							   [{<<"ask">>,NS#state.ask}]]
+							  }
+							 ]|L],NS};
 						both -> {[
-							  [{<<"counter">>,X}],
-							  [{<<"ask">>,NS#state.ask}],
-							  [{<<"bid">>,NS#state.ask}]|L],NS};
+							  [{<<"point">>,[
+							    [{<<"counter">>,X}],
+							    [{<<"ask">>,NS#state.ask}],
+							    [{<<"bid">>,NS#state.ask}]]
+							   }
+							  ]|L],NS};
 						statistics -> {[
-							       [{<<"counter">>,X},
-								{<<"bid">>,NS#state.bid},
-								{<<"ask">>,NS#state.ask},
-								{<<"max">>,NS#state.max},
-								{<<"min">>,NS#state.min},
-								{<<"average_bp_change">>,NS#state.average_bp_change},
-								{<<"last_bp_change">>,NS#state.last_bp_change},
-								{<<"max_bp_change">>,NS#state.max_bp_change},
-								{<<"min_bp_change">>,NS#state.min_bp_change}]
+							       [{<<"point">>,[
+								 [{<<"counter">>,X},
+								  {<<"bid">>,NS#state.bid},
+								  {<<"ask">>,NS#state.ask},
+								  {<<"max">>,NS#state.max},
+								  {<<"min">>,NS#state.min},
+								  {<<"average_bp_change">>,NS#state.average_bp_change},
+								  {<<"last_bp_change">>,NS#state.last_bp_change},
+								  {<<"max_bp_change">>,NS#state.max_bp_change},
+								  {<<"min_bp_change">>,NS#state.min_bp_change}
+								 ]]
+								}]
 							       |L], NS};
-						_ -> {[[{<<"counter">>,X},{<<"bid">>,NS#state.bid}]|L],NS}
+						_ -> {[
+						       [{<<"point">>,[
+							 [{<<"counter">>,X},
+							  {<<"bid">>,NS#state.bid}
+							 ]]
+							}]|L],NS}
 					    end
 				    end,{[],State},P),
     {reply, [{<<"graph">>,Result}], NewState};
@@ -131,14 +152,14 @@ handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
-handle_cast({start,UpdateFun}, #state{interval=I} = State) ->
+handle_cast({subscribe,UpdateFun}, #state{interval=I} = State) ->
     {ok,TRef} = timer:send_interval(I, interval),
     {noreply,State#state{updatefun=UpdateFun, timer= TRef}};
-
-handle_cast(stop, #state{timer = TRef} = State) ->
+handle_cast(unsubscribe, #state{timer = TRef} = State) ->
     timer:cancel(TRef),
     {noreply, State};
-
+handle_cast(stop,State) ->
+    {stop, normal, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
