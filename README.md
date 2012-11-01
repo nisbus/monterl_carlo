@@ -26,7 +26,7 @@ where the parameters are:
 ###Start pumping out data:  
   
 ```erlang
-monterl_carlo:start("MSFT",fun(X) -> io:format("~p~n",[X]) end).
+monterl_carlo:subscribe("MSFT",fun(X) -> io:format("~p~n",[X]) end).
 ```  
   
 This will start pumping out the state of the simulation at the interval you specified.  
@@ -34,7 +34,7 @@ This will start pumping out the state of the simulation at the interval you spec
 You can stop it by calling:  
   
 ```erlang
-monterl_carlo:stop("MSFT").
+monterl_carlo:unsubscribe("MSFT").
 ```  
   
 
