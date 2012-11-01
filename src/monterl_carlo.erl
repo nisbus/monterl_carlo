@@ -112,20 +112,20 @@ handle_call({graph,Type,Points}, _From, State) ->
 					    NS = calculate(S),
 					    case Type of
 						ask -> {[
-							 [{<<"point">>,[
-							   [{<<"counter">>,X}],
-							   [{<<"ask">>,NS#state.ask}]]
-							  }
-							 ]|L],NS};
+							 [{<<"point">>,
+							   [{<<"counter">>,X},
+							    {<<"ask">>,NS#state.ask}
+							   ]
+							  }]|L],NS};
 						both -> {[
-							  [{<<"point">>,[
-							    [{<<"counter">>,X}],
-							    [{<<"ask">>,NS#state.ask}],
-							    [{<<"bid">>,NS#state.ask}]]
-							   }
-							  ]|L],NS};
+							  [{<<"point">>,
+							    [{<<"counter">>,X},
+							     {<<"ask">>,NS#state.ask},
+							     {<<"bid">>,NS#state.ask}
+							    ]
+							   }]|L],NS};
 						statistics -> {[
-							       [{<<"point">>,[
+							       [{<<"point">>,
 								 [{<<"counter">>,X},
 								  {<<"bid">>,NS#state.bid},
 								  {<<"ask">>,NS#state.ask},
@@ -135,18 +135,18 @@ handle_call({graph,Type,Points}, _From, State) ->
 								  {<<"last_bp_change">>,NS#state.last_bp_change},
 								  {<<"max_bp_change">>,NS#state.max_bp_change},
 								  {<<"min_bp_change">>,NS#state.min_bp_change}
-								 ]]
+								 ]
 								}]
 							       |L], NS};
 						_ -> {[
-						       [{<<"point">>,[
+						       [{<<"point">>,
 							 [{<<"counter">>,X},
 							  {<<"bid">>,NS#state.bid}
-							 ]]
+							 ]
 							}]|L],NS}
 					    end
 				    end,{[],State},P),
-    {reply, [{<<"graph">>,Result}], NewState};
+    {reply, [{<<"graph">>,[Result]}], NewState};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
