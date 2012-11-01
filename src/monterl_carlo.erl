@@ -103,7 +103,6 @@ stop(Symbol) when is_binary(Symbol) ->
 
 init([State]) ->
     {ok, State}.
-
     
 handle_call({graph,Type,Points}, _From, State) ->
     P = lists:seq(1,Points),
@@ -157,7 +156,7 @@ handle_cast({subscribe,UpdateFun}, #state{interval=I} = State) ->
     {noreply,State#state{updatefun=UpdateFun, timer= TRef}};
 handle_cast(unsubscribe, #state{timer = TRef} = State) ->
     timer:cancel(TRef),
-    {noreply, State};
+    {noreply, State#state{loop_count = 0}};
 handle_cast(stop,State) ->
     {stop, normal, State};
 handle_cast(_Msg, State) ->
