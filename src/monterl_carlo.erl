@@ -83,17 +83,24 @@ handle_call({graph,Type,Points}, _From, State) ->
 					    {L,S} = Acc,
 					    NS = calculate(S),
 					    case Type of
-						ask -> {[{X,NS#state.ask}|L],NS};
-						both -> {[{X,{NS#state.bid,NS#state.ask}}|L],NS};
-						statistics -> {[{X,{NS#state.bid,
-								    NS#state.ask,
-								    NS#state.max,
-								    NS#state.min,
-								    NS#state.average_bp_change,
-								    NS#state.last_bp_change,
-								    NS#state.max_bp_change,
-								    NS#state.min_bp_change
-								   }}|L], NS};										 _ -> {[{X,NS#state.bid}|L],NS}
+						ask -> {[[{<<"counter">>,X}],
+							 [{<<"ask">>,NS#state.ask}]|L],NS};
+						both -> {[
+							  [{<<"counter">>,X}],
+							  [{<<"ask">>,NS#state.ask}],
+							  [{<<"bid">>,NS#state.ask}]|L],NS};
+						statistics -> {[
+							       [{<<"counter">>,X},
+								{<<"bid">>,NS#state.bid},
+								{<<"ask">>,NS#state.ask},
+								{<<"max">>,NS#state.max},
+								{<<"min">>,NS#state.min},
+								{<<"average_bp_change">>,NS#state.average_bp_change},
+								{<<"last_bp_change">>,NS#state.last_bp_change},
+								{<<"max_bp_change">>,NS#state.max_bp_change},
+								{<<"min_bp_change">>,NS#state.min_bp_change}]
+							       |L], NS};
+						_ -> {[[{<<"counter">>,X},{<<"bid">>,NS#state.bid}]|L],NS}
 					    end
 				    end,{[],State},P),
     {reply, Result, NewState};
@@ -114,9 +121,19 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info(interval,#state{updatefun=Update} = State) ->
-    NewState = calculate(State),
-    Update(NewState),
-    {noreply, NewState}.
+    NS = calculate(State),
+    Reply = [{<<"counter">>,NS#state.loop_count},
+	     {<<"bid">>,NS#state.bid},
+	     {<<"ask">>,NS#state.ask},
+	     {<<"max">>,NS#state.max},
+	     {<<"min">>,NS#state.min},
+	     {<<"average_bp_change">>,NS#state.average_bp_change},
+	     {<<"last_bp_change">>,NS#state.last_bp_change},
+	     {<<"max_bp_change">>,NS#state.max_bp_change},
+	     {<<"min_bp_change">>,NS#state.min_bp_change},
+	     {<<"bp_diff">>,NS#state.bp_diff}],
+    Update(Reply),
+    {noreply, NS}.
 
 
 terminate(_Reason, _State) ->
